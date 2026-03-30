@@ -156,6 +156,56 @@
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 72px; }
 
+  .range-slider { margin-bottom: 14px; }
+  .range-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+  .range-track { position: relative; height: 28px; }
+  .range-fill {
+    position: absolute;
+    top: 12px; height: 4px;
+    background: var(--accent);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .range-track input[type="range"] {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    margin: 0; padding: 0;
+    background: none;
+    border: none;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 28px;
+  }
+  .range-track input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+  .range-track input[type="range"]:first-of-type::-webkit-slider-runnable-track { background: transparent; }
+  .range-track input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    cursor: pointer;
+    pointer-events: all;
+    margin-top: -7px;
+  }
+  .range-track input[type="range"]::-moz-range-track { height: 4px; background: transparent; border: none; }
+  .range-track input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    cursor: pointer;
+    pointer-events: all;
+  }
+
   .checkbox-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -390,6 +440,21 @@
           </div>
 
           <div class="field-group">
+            <label>Revenue Range</label>
+            <div class="range-slider">
+              <div class="range-labels">
+                <span id="revMinLabel">$100K</span>
+                <span id="revMaxLabel">$50M+</span>
+              </div>
+              <div class="range-track" id="rangeTrack">
+                <div class="range-fill" id="rangeFill"></div>
+                <input type="range" id="revMin" min="0" max="21" value="1" step="1" />
+                <input type="range" id="revMax" min="0" max="21" value="21" step="1" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group">
             <label>Data Sources to Search</label>
             <div class="checkbox-grid">
               <div class="checkbox-item checked" data-val="NYS DOS new entity filings"><div class="check-box">✓</div><span>NYS DOS Filings</span></div>
@@ -447,6 +512,42 @@
 <script>
   let allProspects = [];
 
+  const revSteps = [
+    0, 50000, 100000, 250000, 500000, 750000,
+    1000000, 1500000, 2000000, 3000000, 4000000, 5000000,
+    7500000, 10000000, 15000000, 20000000, 25000000,
+    30000000, 40000000, 50000000, 75000000, 100000000
+  ];
+  const revLabels = [
+    '$0', '$50K', '$100K', '$250K', '$500K', '$750K',
+    '$1M', '$1.5M', '$2M', '$3M', '$4M', '$5M',
+    '$7.5M', '$10M', '$15M', '$20M', '$25M',
+    '$30M', '$40M', '$50M', '$75M', '$100M+'
+  ];
+
+  const revMinEl = document.getElementById('revMin');
+  const revMaxEl = document.getElementById('revMax');
+  const revMinLabel = document.getElementById('revMinLabel');
+  const revMaxLabel = document.getElementById('revMaxLabel');
+  const rangeFill = document.getElementById('rangeFill');
+
+  function updateRange() {
+    let lo = parseInt(revMinEl.value);
+    let hi = parseInt(revMaxEl.value);
+    if (lo > hi) { revMinEl.value = hi; lo = hi; }
+    if (hi < lo) { revMaxEl.value = lo; hi = lo; }
+    revMinLabel.textContent = revLabels[lo];
+    revMaxLabel.textContent = revLabels[hi];
+    const pctLo = (lo / 21) * 100;
+    const pctHi = (hi / 21) * 100;
+    rangeFill.style.left = pctLo + '%';
+    rangeFill.style.width = (pctHi - pctLo) + '%';
+  }
+
+  revMinEl.addEventListener('input', updateRange);
+  revMaxEl.addEventListener('input', updateRange);
+  updateRange();
+
   document.querySelectorAll('.checkbox-item').forEach(item => {
     item.addEventListener('click', () => {
       item.classList.toggle('checked');
@@ -497,6 +598,9 @@
 
     const notes = document.getElementById('notes').value.trim();
     const sources = getSources();
+    const revMinVal = revSteps[parseInt(revMinEl.value)];
+    const revMaxVal = revSteps[parseInt(revMaxEl.value)];
+    const revRange = `${revLabels[parseInt(revMinEl.value)]} to ${revLabels[parseInt(revMaxEl.value)]}`;
 
     if (!industries || !geography) { alert('Please select at least one industry and one county.'); return; }
 
@@ -557,6 +661,7 @@ CRITICAL JSON RULES:
 
 INDUSTRIES: ${industries}
 GEOGRAPHY: ${geography}
+TARGET REVENUE RANGE: ${revRange}
 SOURCES TO SEARCH:
 ${sources.map(s => `- ${s}`).join('\n')}
 NOTES: ${notes || 'None'}
