@@ -509,8 +509,8 @@
 
     const payload = {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 32000,
-      thinking: { type: 'enabled', budget_tokens: 5000 },
+      max_tokens: 16000,
+      thinking: { type: 'enabled', budget_tokens: 3000 },
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       system: `You are a commercial insurance prospecting agent for an independent agent in New York State.
 Your job is to find real, specific businesses matching the Ideal Client Profile using web search.
@@ -536,17 +536,17 @@ After researching, return ONLY a valid JSON array (no markdown, no preamble) wit
   }
 ]
 
-Return as many prospects as you can find, up to a maximum of 200. Rank them by estimated revenue, highest first.
+Return up to 50 prospects. Rank them by estimated revenue, highest first.
 
 CRITICAL JSON RULES:
 - Return ONLY the JSON array, no other text
 - All string values MUST be properly escaped (use \\" for quotes inside strings, \\n for newlines)
-- Use short simple strings for source/priority_reason fields — no quotes or special characters within values
+- Use short simple strings for source fields — no quotes or special characters within values
 - estimated_revenue must be a plain number, not a string
 - Validate your JSON is parseable before returning it`,
       messages: [{
         role: 'user',
-        content: `Find as many real commercial insurance prospects as possible (up to 200) in New York State matching this ICP. Rank results by estimated annual revenue, highest first.
+        content: `Find up to 50 real commercial insurance prospects in New York State matching this ICP. Rank by estimated annual revenue, highest first.
 
 INDUSTRIES: ${industries}
 GEOGRAPHY: ${geography}
@@ -564,7 +564,7 @@ Instructions:
 5. Prioritize new formations (< 2 years), recent permits, growth signals
 6. Try to find a real decision-maker name and contact info for each
 7. Estimate annual revenue for each prospect based on employee count, industry, and any public data
-8. Return all prospects as a JSON array, sorted by estimated_revenue descending`
+8. Return up to 50 prospects as a JSON array, sorted by estimated_revenue descending`
       }]
     };
 
