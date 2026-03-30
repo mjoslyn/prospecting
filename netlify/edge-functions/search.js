@@ -1,10 +1,14 @@
 export default async function handler(request) {
+  const start = Date.now();
+
   if (request.method !== "POST") {
+    console.log("[search] 405 — non-POST request");
     return new Response("Method Not Allowed", { status: 405 });
   }
 
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   if (!ANTHROPIC_API_KEY) {
+    console.error("[search] ANTHROPIC_API_KEY not set");
     return new Response(
       JSON.stringify({ error: "ANTHROPIC_API_KEY environment variable not set." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
@@ -15,11 +19,19 @@ export default async function handler(request) {
   try {
     body = await request.json();
   } catch {
+    console.error("[search] Invalid JSON body");
     return new Response(
       JSON.stringify({ error: "Invalid JSON body." }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
+
+  console.log("[search] Request received", {
+    model: body.model,
+    max_tokens: body.max_tokens,
+    tools: body.tools?.map((t) => t.name),
+    message_length: JSON.stringify(body.messages).length,
+  });
 
   // Enable streaming
   body.stream = true;
@@ -38,11 +50,21 @@ export default async function handler(request) {
 
     if (!response.ok) {
       const data = await response.json();
+      const errMsg = data.error?.message || "Anthropic API error";
+      console.error("[search] Anthropic API error", {
+        status: response.status,
+        error: errMsg,
+        elapsed_ms: Date.now() - start,
+      });
       return new Response(
-        JSON.stringify({ error: data.error?.message || "Anthropic API error" }),
+        JSON.stringify({ error: errMsg }),
         { status: response.status, headers: { "Content-Type": "application/json" } }
       );
     }
+
+    console.log("[search] Streaming response started", {
+      elapsed_ms: Date.now() - start,
+    });
 
     // Stream the SSE response through to the client
     return new Response(response.body, {
@@ -54,6 +76,10 @@ export default async function handler(request) {
       },
     });
   } catch (err) {
+    console.error("[search] Fetch error", {
+      error: err.message,
+      elapsed_ms: Date.now() - start,
+    });
     return new Response(
       JSON.stringify({ error: err.message }),
       { status: 502, headers: { "Content-Type": "application/json" } }

@@ -412,15 +412,6 @@
           </div>
 
           <div class="field-group">
-            <label>Number of Prospects to Return</label>
-            <select id="prospectCount">
-              <option value="10">10 prospects</option>
-              <option value="20" selected>20 prospects</option>
-              <option value="30">30 prospects</option>
-            </select>
-          </div>
-
-          <div class="field-group">
             <label>Additional Notes / Exclusions</label>
             <textarea id="notes" placeholder="e.g. Exclude sole proprietors, focus on companies with vehicles" style="min-height:56px"></textarea>
           </div>
@@ -516,7 +507,6 @@
     const empMin = document.getElementById('empMin').value.trim() || '5';
     const empMax = document.getElementById('empMax').value.trim() || '100';
     const notes = document.getElementById('notes').value.trim();
-    const count = document.getElementById('prospectCount').value;
     const lines = getLines();
     const sources = getSources();
 
@@ -539,7 +529,7 @@
 
     const payload = {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      max_tokens: 16000,
       thinking: { type: 'enabled', budget_tokens: 5000 },
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       system: `You are a commercial insurance prospecting agent for an independent agent in New York State.
@@ -556,6 +546,7 @@ After researching, return ONLY a valid JSON array (no markdown, no preamble) wit
     "industry": "Industry type",
     "naics": "NAICS code if findable, else best estimate",
     "employees": "Estimated employee count or range",
+    "estimated_revenue": "Estimated annual revenue as a number (e.g. 5000000 for $5M). Use best estimate from employee count, industry averages, and any public data. Return as a raw number, not a string.",
     "contact_name": "Owner/decision maker name if findable, else null",
     "contact_email": "Email if findable, else null",
     "contact_phone": "Phone if findable, else null",
@@ -567,10 +558,18 @@ After researching, return ONLY a valid JSON array (no markdown, no preamble) wit
   }
 ]
 
-Priority: high = new entity < 2 years, recent permit, growth signal, or known broker change. medium = good fit, no urgent trigger. low = possible fit, limited info.`,
+Return as many prospects as you can find, up to a maximum of 200. Rank them by estimated revenue, highest first.
+Priority: high = new entity < 2 years, recent permit, growth signal, or known broker change. medium = good fit, no urgent trigger. low = possible fit, limited info.
+
+CRITICAL JSON RULES:
+- Return ONLY the JSON array, no other text
+- All string values MUST be properly escaped (use \\" for quotes inside strings, \\n for newlines)
+- Use short simple strings for source/priority_reason fields — no quotes or special characters within values
+- estimated_revenue must be a plain number, not a string
+- Validate your JSON is parseable before returning it`,
       messages: [{
         role: 'user',
-        content: `Find ${count} real commercial insurance prospects in New York State matching this ICP.
+        content: `Find as many real commercial insurance prospects as possible (up to 200) in New York State matching this ICP. Rank results by estimated annual revenue, highest first.
 
 INDUSTRIES: ${industries}
 GEOGRAPHY: ${geography}
@@ -587,7 +586,8 @@ Instructions:
 4. For OSHA: search OSHA inspection records for companies in target industries
 5. Prioritize new formations (< 2 years), recent permits, growth signals
 6. Try to find a real decision-maker name and contact info for each
-7. Return exactly ${count} prospects as a JSON array`
+7. Estimate annual revenue for each prospect based on employee count, industry, and any public data
+8. Return all prospects as a JSON array, sorted by estimated_revenue descending`
       }]
     };
 
@@ -640,7 +640,29 @@ Instructions:
       const jsonMatch = rawText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
 
-      const prospects = JSON.parse(jsonMatch[0]);
+      let jsonStr = jsonMatch[0];
+      // Repair common LLM JSON issues: control chars, unescaped quotes in values
+      jsonStr = jsonStr.replace(/[\x00-\x1f]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
+      // Fix unescaped double quotes inside string values by re-encoding each value
+      jsonStr = jsonStr.replace(/"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)/g, (match) => {
+        try { JSON.parse(`{${match}: 0}`); return match; } catch { return match; }
+      });
+
+      let prospects;
+      try {
+        prospects = JSON.parse(jsonStr);
+      } catch (e) {
+        // Last resort: extract individual objects with a lenient regex
+        const objects = [];
+        const objRegex = /\{[^{}]*"name"\s*:\s*"[^"]*"[^{}]*\}/g;
+        let m;
+        while ((m = objRegex.exec(jsonStr)) !== null) {
+          try { objects.push(JSON.parse(m[0])); } catch {}
+        }
+        if (!objects.length) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
+        log(`Recovered ${objects.length} prospects from malformed JSON`, 'warn');
+        prospects = objects;
+      }
       allProspects = prospects;
 
       log(`Found ${prospects.length} prospects`, 'success');
@@ -656,6 +678,15 @@ Instructions:
 
     btn.disabled = false;
     btn.innerHTML = '<span>Run Prospect Hunt</span>';
+  }
+
+  function formatRevenue(val) {
+    const n = Number(val);
+    if (!n) return '';
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+    return '$' + n.toLocaleString();
   }
 
   function renderProspects(prospects) {
@@ -680,6 +711,7 @@ Instructions:
             ${p.industry ? `<span class="tag industry">${p.industry}</span>` : ''}
             ${p.naics ? `<span class="tag">NAICS ${p.naics}</span>` : ''}
             ${p.employees ? `<span class="tag">${p.employees} emp</span>` : ''}
+            ${p.estimated_revenue ? `<span class="tag source">${formatRevenue(p.estimated_revenue)}</span>` : ''}
             ${p.source ? `<span class="tag source">${p.source}</span>` : ''}
             ${p.renewal_month ? `<span class="tag renewal">Renews: ${p.renewal_month}</span>` : ''}
             ${p.priority === 'high' ? `<span class="tag priority-high">Hot Lead</span>` : ''}
@@ -698,9 +730,9 @@ Instructions:
 
   function exportCSV() {
     if (!allProspects.length) return;
-    const headers = ['Name','Address','Industry','NAICS','Employees','Contact Name','Email','Phone','Source','Renewal Month','Priority','Priority Reason','Lines Needed'];
+    const headers = ['Name','Address','Industry','NAICS','Employees','Estimated Revenue','Contact Name','Email','Phone','Source','Renewal Month','Priority','Priority Reason','Lines Needed'];
     const rows = allProspects.map(p => [
-      p.name, p.address, p.industry, p.naics, p.employees,
+      p.name, p.address, p.industry, p.naics, p.employees, p.estimated_revenue,
       p.contact_name, p.contact_email, p.contact_phone,
       p.source, p.renewal_month, p.priority, p.priority_reason,
       (p.lines_needed || []).join('; ')
