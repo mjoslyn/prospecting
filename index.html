@@ -390,15 +390,6 @@
           </div>
 
           <div class="field-group">
-            <label>Employee Count Range</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <input type="text" id="empMin" placeholder="Min (e.g. 5)" style="margin-bottom:0" />
-              <input type="text" id="empMax" placeholder="Max (e.g. 75)" style="margin-bottom:0" />
-            </div>
-          </div>
-          <div style="margin-bottom:14px"></div>
-
-          <div class="field-group">
             <label>Data Sources to Search</label>
             <div class="checkbox-grid">
               <div class="checkbox-item checked" data-val="NYS DOS new entity filings"><div class="check-box">✓</div><span>NYS DOS Filings</span></div>
@@ -504,8 +495,6 @@
     const counties = Array.from(document.querySelectorAll('#countyGrid .checkbox-item.checked')).map(i => i.dataset.val);
     const geography = counties.join(', ');
 
-    const empMin = document.getElementById('empMin').value.trim() || '5';
-    const empMax = document.getElementById('empMax').value.trim() || '100';
     const notes = document.getElementById('notes').value.trim();
     const sources = getSources();
 
@@ -544,8 +533,7 @@ After researching, return ONLY a valid JSON array (no markdown, no preamble) wit
     "address": "Full address with city, state, zip",
     "industry": "Industry type",
     "naics": "NAICS code if findable, else best estimate",
-    "employees": "Estimated employee count or range",
-    "estimated_revenue": "Estimated annual revenue as a number (e.g. 5000000 for $5M). Use best estimate from employee count, industry averages, and any public data. Return as a raw number, not a string.",
+    "estimated_revenue": "Estimated annual revenue as a number (e.g. 5000000 for $5M). Use best estimate from industry averages and any public data. Return as a raw number, not a string.",
     "contact_name": "Owner/decision maker name if findable, else null",
     "contact_email": "Email if findable, else null",
     "contact_phone": "Phone if findable, else null",
@@ -569,7 +557,6 @@ CRITICAL JSON RULES:
 
 INDUSTRIES: ${industries}
 GEOGRAPHY: ${geography}
-EMPLOYEE COUNT: ${empMin} to ${empMax}
 SOURCES TO SEARCH:
 ${sources.map(s => `- ${s}`).join('\n')}
 NOTES: ${notes || 'None'}
@@ -720,7 +707,6 @@ Instructions:
         <div class="prospect-meta">
           ${p.industry ? `<span class="tag industry">${p.industry}</span>` : ''}
           ${p.naics ? `<span class="tag">NAICS ${p.naics}</span>` : ''}
-          ${p.employees ? `<span class="tag">${p.employees} emp</span>` : ''}
           ${p.estimated_revenue ? `<span class="tag source">${formatRevenue(p.estimated_revenue)}</span>` : ''}
           ${p.source ? `<span class="tag source">${p.source}</span>` : ''}
           ${p.renewal_month ? `<span class="tag renewal">Renews: ${p.renewal_month}</span>` : ''}
@@ -733,9 +719,9 @@ Instructions:
 
   function exportCSV() {
     if (!allProspects.length) return;
-    const headers = ['Name','Address','Industry','NAICS','Employees','Estimated Revenue','Contact Name','Email','Phone','Source','Renewal Month','Lines Needed'];
+    const headers = ['Name','Address','Industry','NAICS','Estimated Revenue','Contact Name','Email','Phone','Source','Renewal Month','Lines Needed'];
     const rows = allProspects.map(p => [
-      p.name, p.address, p.industry, p.naics, p.employees, p.estimated_revenue,
+      p.name, p.address, p.industry, p.naics, p.estimated_revenue,
       p.contact_name, p.contact_email, p.contact_phone,
       p.source, p.renewal_month,
       (p.lines_needed || []).join('; ')
