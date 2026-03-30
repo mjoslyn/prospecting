@@ -593,6 +593,7 @@ Instructions:
       const decoder = new TextDecoder();
       let rawText = '';
       let buffer = '';
+      const eventTypes = new Set();
 
       while (true) {
         const { done, value } = await reader.read();
@@ -608,18 +609,25 @@ Instructions:
           if (payload === '[DONE]') continue;
           try {
             const evt = JSON.parse(payload);
+            eventTypes.add(evt.type + (evt.delta?.type ? ':' + evt.delta.type : ''));
             if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
               rawText += evt.delta.text;
             }
             if (evt.type === 'message_start') {
               log('Claude is researching...');
             }
+            if (evt.type === 'error') {
+              log(`Stream error: ${evt.error?.message || JSON.stringify(evt)}`, 'error');
+            }
           } catch {}
         }
       }
 
-      log('Response received');
-      log('Parsing prospect data...');
+      log(`Stream complete. Events: ${[...eventTypes].join(', ')}`);
+      log(`Raw text length: ${rawText.length} chars`);
+      if (rawText.length < 200) {
+        log(`Raw text: ${rawText.substring(0, 500)}`, 'warn');
+      }
 
       // Try to find a JSON array — complete or truncated
       let jsonStr = '';
@@ -635,7 +643,7 @@ Instructions:
         }
       }
 
-      if (!jsonStr) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
+      if (!jsonStr) throw new Error('Could not parse prospects from response. Raw text starts with: ' + rawText.substring(0, 150));
 
       // Strip control chars
       jsonStr = jsonStr.replace(/[\x00-\x1f]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
