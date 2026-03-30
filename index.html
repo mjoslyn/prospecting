@@ -352,12 +352,39 @@
 
           <div class="field-group">
             <label>Target Industries / Business Types</label>
-            <textarea id="industries" placeholder="e.g. General contractors, electrical subcontractors, plumbing companies, HVAC installers"></textarea>
+            <div class="checkbox-grid" id="industryGrid">
+              <div class="checkbox-item" data-val="General Contractors"><div class="check-box"></div><span>General Contractors</span></div>
+              <div class="checkbox-item" data-val="Electrical Contractors"><div class="check-box"></div><span>Electrical</span></div>
+              <div class="checkbox-item" data-val="Plumbing / HVAC"><div class="check-box"></div><span>Plumbing / HVAC</span></div>
+              <div class="checkbox-item" data-val="Roofing Contractors"><div class="check-box"></div><span>Roofing</span></div>
+              <div class="checkbox-item" data-val="Landscaping / Snow Removal"><div class="check-box"></div><span>Landscaping / Snow</span></div>
+              <div class="checkbox-item" data-val="Trucking / Freight"><div class="check-box"></div><span>Trucking / Freight</span></div>
+              <div class="checkbox-item" data-val="Auto Body / Repair Shops"><div class="check-box"></div><span>Auto Body / Repair</span></div>
+              <div class="checkbox-item" data-val="Restaurants / Food Service"><div class="check-box"></div><span>Restaurants</span></div>
+              <div class="checkbox-item" data-val="Retail / Wholesale"><div class="check-box"></div><span>Retail / Wholesale</span></div>
+              <div class="checkbox-item" data-val="Manufacturing"><div class="check-box"></div><span>Manufacturing</span></div>
+              <div class="checkbox-item" data-val="Janitorial / Cleaning"><div class="check-box"></div><span>Janitorial</span></div>
+              <div class="checkbox-item" data-val="Real Estate / Property Mgmt"><div class="check-box"></div><span>Real Estate / Prop Mgmt</span></div>
+              <div class="checkbox-item" data-val="Municipalities / Local Government"><div class="check-box"></div><span>Municipalities</span></div>
+              <div class="checkbox-item" data-val="School Districts"><div class="check-box"></div><span>School Districts</span></div>
+            </div>
+            <textarea id="industriesCustom" placeholder="Other industries (comma-separated)" style="min-height:48px"></textarea>
           </div>
 
           <div class="field-group">
-            <label>Geography (NYS counties or cities)</label>
-            <input type="text" id="geography" placeholder="e.g. Erie County, Buffalo, Niagara County" />
+            <label>WNY Counties</label>
+            <div class="checkbox-grid" id="countyGrid">
+              <div class="checkbox-item" data-val="Erie County"><div class="check-box"></div><span>Erie</span></div>
+              <div class="checkbox-item" data-val="Niagara County"><div class="check-box"></div><span>Niagara</span></div>
+              <div class="checkbox-item" data-val="Monroe County"><div class="check-box"></div><span>Monroe</span></div>
+              <div class="checkbox-item" data-val="Cattaraugus County"><div class="check-box"></div><span>Cattaraugus</span></div>
+              <div class="checkbox-item" data-val="Chautauqua County"><div class="check-box"></div><span>Chautauqua</span></div>
+              <div class="checkbox-item" data-val="Allegany County"><div class="check-box"></div><span>Allegany</span></div>
+              <div class="checkbox-item" data-val="Genesee County"><div class="check-box"></div><span>Genesee</span></div>
+              <div class="checkbox-item" data-val="Orleans County"><div class="check-box"></div><span>Orleans</span></div>
+              <div class="checkbox-item" data-val="Wyoming County"><div class="check-box"></div><span>Wyoming</span></div>
+              <div class="checkbox-item" data-val="Livingston County"><div class="check-box"></div><span>Livingston</span></div>
+            </div>
           </div>
 
           <div class="field-group">
@@ -482,15 +509,22 @@
   }
 
   async function runAgent() {
-    const industries = document.getElementById('industries').value.trim();
-    const geography = document.getElementById('geography').value.trim();
+    const checkedIndustries = Array.from(document.querySelectorAll('#industryGrid .checkbox-item.checked')).map(i => i.dataset.val);
+    const customIndustries = document.getElementById('industriesCustom').value.trim();
+    const allIndustries = [...checkedIndustries];
+    if (customIndustries) allIndustries.push(...customIndustries.split(',').map(s => s.trim()).filter(Boolean));
+    const industries = allIndustries.join(', ');
+
+    const counties = Array.from(document.querySelectorAll('#countyGrid .checkbox-item.checked')).map(i => i.dataset.val);
+    const geography = counties.join(', ');
+
     const empMin = document.getElementById('empMin').value.trim() || '5';
     const empMax = document.getElementById('empMax').value.trim() || '100';
     const notes = document.getElementById('notes').value.trim();
     const lines = getLines();
     const sources = getSources();
 
-    if (!industries || !geography) { alert('Please fill in industries and geography.'); return; }
+    if (!industries || !geography) { alert('Please select at least one industry and one county.'); return; }
 
     const btn = document.getElementById('runBtn');
     btn.disabled = true;
