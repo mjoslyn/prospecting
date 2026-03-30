@@ -397,18 +397,6 @@
           <div style="margin-bottom:14px"></div>
 
           <div class="field-group">
-            <label>Primary Lines to Sell</label>
-            <div class="checkbox-grid">
-              <div class="checkbox-item checked" data-val="Workers Comp"><div class="check-box">✓</div><span>Workers Comp</span></div>
-              <div class="checkbox-item checked" data-val="General Liability"><div class="check-box">✓</div><span>GL / BOP</span></div>
-              <div class="checkbox-item checked" data-val="Commercial Auto"><div class="check-box">✓</div><span>Commercial Auto</span></div>
-              <div class="checkbox-item checked" data-val="E&O / Cyber"><div class="check-box">✓</div><span>E&O / Cyber</span></div>
-              <div class="checkbox-item checked" data-val="EPLI"><div class="check-box">✓</div><span>EPLI</span></div>
-              <div class="checkbox-item checked" data-val="D&O"><div class="check-box">✓</div><span>D&O</span></div>
-            </div>
-          </div>
-
-          <div class="field-group">
             <label>Data Sources to Search</label>
             <div class="checkbox-grid">
               <div class="checkbox-item checked" data-val="NYS DOS new entity filings"><div class="check-box">✓</div><span>NYS DOS Filings</span></div>
@@ -477,12 +465,6 @@
     return Array.from(document.querySelectorAll('.checkbox-item.checked')).map(i => i.dataset.val);
   }
 
-  function getLines() {
-    const lineVals = ['Workers Comp','General Liability','Commercial Auto','E&O / Cyber','EPLI','D&O'];
-    return Array.from(document.querySelectorAll('.checkbox-item.checked'))
-      .map(i => i.dataset.val).filter(v => lineVals.includes(v));
-  }
-
   function getSources() {
     const sourceVals = ['NYS DOS new entity filings','Google Maps / Places','LinkedIn public profiles','County permit databases','OSHA public records','Local business journals'];
     return Array.from(document.querySelectorAll('.checkbox-item.checked'))
@@ -523,7 +505,6 @@
     const empMin = document.getElementById('empMin').value.trim() || '5';
     const empMax = document.getElementById('empMax').value.trim() || '100';
     const notes = document.getElementById('notes').value.trim();
-    const lines = getLines();
     const sources = getSources();
 
     if (!industries || !geography) { alert('Please select at least one industry and one county.'); return; }
@@ -587,7 +568,6 @@ CRITICAL JSON RULES:
 INDUSTRIES: ${industries}
 GEOGRAPHY: ${geography}
 EMPLOYEE COUNT: ${empMin} to ${empMax}
-LINES NEEDED: ${lines.join(', ')}
 SOURCES TO SEARCH:
 ${sources.map(s => `- ${s}`).join('\n')}
 NOTES: ${notes || 'None'}
