@@ -8,16 +8,16 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap');
 
   :root {
-    --bg: #0e0e0e;
-    --surface: #161616;
-    --surface2: #1f1f1f;
-    --border: #2a2a2a;
-    --accent: #c8f060;
-    --accent2: #60c8f0;
-    --text: #e8e8e8;
-    --muted: #666;
-    --danger: #f06060;
-    --warn: #f0b060;
+    --bg: #f4f4f5;
+    --surface: #ffffff;
+    --surface2: #f0f0f2;
+    --border: #d8d8dc;
+    --accent: #2d7a3a;
+    --accent2: #1a6b8a;
+    --text: #1a1a1a;
+    --muted: #71717a;
+    --danger: #c53030;
+    --warn: #b45309;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,8 +35,8 @@
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(200,240,96,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(200,240,96,0.03) 1px, transparent 1px);
+      linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
     background-size: 40px 40px;
     pointer-events: none;
     z-index: 0;
@@ -83,7 +83,7 @@
     width: 7px; height: 7px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 6px var(--accent);
+    box-shadow: 0 0 4px var(--accent);
     animation: pulse 2s infinite;
   }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
@@ -108,7 +108,7 @@
   .panel-header .icon {
     width: 24px; height: 24px;
     background: var(--accent);
-    color: #000;
+    color: #fff;
     border-radius: 4px;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px;
@@ -177,7 +177,7 @@
   .checkbox-item:hover { border-color: var(--muted); }
   .checkbox-item.checked {
     border-color: var(--accent);
-    background: rgba(200,240,96,0.06);
+    background: rgba(45,122,58,0.06);
     color: var(--accent);
   }
   .check-box {
@@ -191,7 +191,7 @@
   .checkbox-item.checked .check-box {
     background: var(--accent);
     border-color: var(--accent);
-    color: #000;
+    color: #fff;
   }
   .checkbox-item span { font-size: 11px; line-height: 1.3; }
 
@@ -207,8 +207,8 @@
     transition: all 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
-  .btn-primary { background: var(--accent); color: #000; }
-  .btn-primary:hover { background: #d4f570; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #348a42; transform: translateY(-1px); }
   .btn-primary:active { transform: translateY(0); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
   .btn-secondary {
@@ -282,9 +282,6 @@
   .prospect-card {
     padding: 16px 18px;
     border-bottom: 1px solid var(--border);
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
     transition: background 0.1s;
     animation: fadeIn 0.3s ease;
   }
@@ -308,29 +305,12 @@
     border-radius: 3px;
     font-size: 10px;
   }
-  .tag.industry { border-color: rgba(96,200,240,0.3); color: var(--accent2); }
-  .tag.source { border-color: rgba(200,240,96,0.3); color: var(--accent); }
-  .tag.renewal { border-color: rgba(240,176,96,0.3); color: var(--warn); }
-  .tag.priority-high { border-color: rgba(240,96,96,0.4); color: var(--danger); }
+  .tag.industry { border-color: rgba(26,107,138,0.3); color: var(--accent2); }
+  .tag.source { border-color: rgba(45,122,58,0.3); color: var(--accent); }
+  .tag.renewal { border-color: rgba(180,83,9,0.3); color: var(--warn); }
 
   .prospect-contact { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.7; }
   .prospect-contact a { color: var(--accent2); text-decoration: none; }
-
-  .prospect-score {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 4px; flex-shrink: 0;
-  }
-  .score-ring {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 500; border: 2px solid;
-  }
-  .score-high { border-color: var(--accent); color: var(--accent); }
-  .score-mid { border-color: var(--warn); color: var(--warn); }
-  .score-low { border-color: var(--border); color: var(--muted); }
-  .score-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
   .empty-state { padding: 60px 20px; text-align: center; color: var(--muted); }
   .empty-state .big { font-size: 32px; margin-bottom: 12px; }
@@ -338,8 +318,8 @@
 
   .spinner {
     width: 14px; height: 14px;
-    border: 2px solid rgba(0,0,0,0.2);
-    border-top-color: #000;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
@@ -427,7 +407,7 @@
     <div class="results-panel">
       <div class="log-panel">
         <div class="panel-header">
-          <div class="icon" style="background:var(--accent2)">▶</div>
+          <div class="icon" style="background:var(--accent2);color:#fff">▶</div>
           <h2>Agent Log</h2>
           <span class="badge" id="logStatus">idle</span>
         </div>
@@ -438,7 +418,7 @@
 
       <div class="prospects-panel">
         <div class="panel-header">
-          <div class="icon" style="background:var(--warn);color:#000">◈</div>
+          <div class="icon" style="background:var(--warn);color:#fff">◈</div>
           <h2>Prospect List</h2>
           <span class="badge" id="prospectBadge">0 found</span>
           <button class="export-btn" id="exportBtn" onclick="exportCSV()" disabled>Export CSV</button>
@@ -552,14 +532,11 @@ After researching, return ONLY a valid JSON array (no markdown, no preamble) wit
     "contact_phone": "Phone if findable, else null",
     "source": "Where you found them",
     "renewal_month": "Estimated renewal month if any signal found, else null",
-    "priority": "high / medium / low",
-    "priority_reason": "1 sentence why this is a good prospect",
     "lines_needed": ["Workers Comp", "General Liability"]
   }
 ]
 
 Return as many prospects as you can find, up to a maximum of 200. Rank them by estimated revenue, highest first.
-Priority: high = new entity < 2 years, recent permit, growth signal, or known broker change. medium = good fit, no urgent trigger. low = possible fit, limited info.
 
 CRITICAL JSON RULES:
 - Return ONLY the JSON array, no other text
@@ -710,8 +687,6 @@ Instructions:
     const list = document.getElementById('prospectsList');
     list.innerHTML = '';
     prospects.forEach((p, i) => {
-      const scoreClass = p.priority === 'high' ? 'score-high' : p.priority === 'medium' ? 'score-mid' : 'score-low';
-      const scoreNum = p.priority === 'high' ? 'A' : p.priority === 'medium' ? 'B' : 'C';
       const contactLines = [];
       if (p.contact_name) contactLines.push(p.contact_name);
       if (p.contact_email) contactLines.push(`<a href="mailto:${p.contact_email}">${p.contact_email}</a>`);
@@ -721,37 +696,29 @@ Instructions:
       card.className = 'prospect-card';
       card.style.animationDelay = `${i * 0.04}s`;
       card.innerHTML = `
-        <div>
-          <div class="prospect-name">${p.name || 'Unknown'}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.address || ''}</div>
-          <div class="prospect-meta">
-            ${p.industry ? `<span class="tag industry">${p.industry}</span>` : ''}
-            ${p.naics ? `<span class="tag">NAICS ${p.naics}</span>` : ''}
-            ${p.employees ? `<span class="tag">${p.employees} emp</span>` : ''}
-            ${p.estimated_revenue ? `<span class="tag source">${formatRevenue(p.estimated_revenue)}</span>` : ''}
-            ${p.source ? `<span class="tag source">${p.source}</span>` : ''}
-            ${p.renewal_month ? `<span class="tag renewal">Renews: ${p.renewal_month}</span>` : ''}
-            ${p.priority === 'high' ? `<span class="tag priority-high">Hot Lead</span>` : ''}
-          </div>
-          ${linesTags ? `<div class="prospect-meta" style="margin-top:4px">${linesTags}</div>` : ''}
-          ${p.priority_reason ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic">${p.priority_reason}</div>` : ''}
-          ${contactLines.length ? `<div class="prospect-contact">${contactLines.join(' · ')}</div>` : ''}
+        <div class="prospect-name">${p.name || 'Unknown'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.address || ''}</div>
+        <div class="prospect-meta">
+          ${p.industry ? `<span class="tag industry">${p.industry}</span>` : ''}
+          ${p.naics ? `<span class="tag">NAICS ${p.naics}</span>` : ''}
+          ${p.employees ? `<span class="tag">${p.employees} emp</span>` : ''}
+          ${p.estimated_revenue ? `<span class="tag source">${formatRevenue(p.estimated_revenue)}</span>` : ''}
+          ${p.source ? `<span class="tag source">${p.source}</span>` : ''}
+          ${p.renewal_month ? `<span class="tag renewal">Renews: ${p.renewal_month}</span>` : ''}
         </div>
-        <div class="prospect-score">
-          <div class="score-ring ${scoreClass}">${scoreNum}</div>
-          <div class="score-label">priority</div>
-        </div>`;
+        ${linesTags ? `<div class="prospect-meta" style="margin-top:4px">${linesTags}</div>` : ''}
+        ${contactLines.length ? `<div class="prospect-contact">${contactLines.join(' · ')}</div>` : ''}`;
       list.appendChild(card);
     });
   }
 
   function exportCSV() {
     if (!allProspects.length) return;
-    const headers = ['Name','Address','Industry','NAICS','Employees','Estimated Revenue','Contact Name','Email','Phone','Source','Renewal Month','Priority','Priority Reason','Lines Needed'];
+    const headers = ['Name','Address','Industry','NAICS','Employees','Estimated Revenue','Contact Name','Email','Phone','Source','Renewal Month','Lines Needed'];
     const rows = allProspects.map(p => [
       p.name, p.address, p.industry, p.naics, p.employees, p.estimated_revenue,
       p.contact_name, p.contact_email, p.contact_phone,
-      p.source, p.renewal_month, p.priority, p.priority_reason,
+      p.source, p.renewal_month,
       (p.lines_needed || []).join('; ')
     ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`));
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
