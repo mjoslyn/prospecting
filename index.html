@@ -734,16 +734,19 @@ Instructions:
         log(`Raw text: ${rawText.substring(0, 500)}`, 'warn');
       }
 
-      // Try to find a JSON array — complete or truncated
+      // Strip markdown fences if present
+      let cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+
+      // Find the last JSON array in the response (skip any brackets in preamble)
       let jsonStr = '';
-      const completeMatch = rawText.match(/\[[\s\S]*\]/);
-      if (completeMatch) {
-        jsonStr = completeMatch[0];
+      const allArrays = [...cleaned.matchAll(/\[\s*\{[\s\S]*?\}\s*\]/g)];
+      if (allArrays.length) {
+        jsonStr = allArrays[allArrays.length - 1][0];
       } else {
-        // Truncated: find the opening [ and close it
-        const startIdx = rawText.indexOf('[');
-        if (startIdx !== -1) {
-          jsonStr = rawText.slice(startIdx);
+        // Truncated: find the last [ that starts a JSON array
+        const lastStart = cleaned.lastIndexOf('[');
+        if (lastStart !== -1 && cleaned.indexOf('"name"', lastStart) !== -1) {
+          jsonStr = cleaned.slice(lastStart);
           log('Response was truncated, recovering partial results...', 'warn');
         }
       }
