@@ -598,17 +598,44 @@ Instructions:
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
-
-      log('Response received');
-
-      let rawText = '';
-      for (const block of data.content) {
-        if (block.type === 'text') rawText += block.text;
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error ${res.status}`);
       }
 
+      log('Stream connected, awaiting results...');
+
+      // Parse SSE stream from Anthropic API
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let rawText = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(payload);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+              rawText += evt.delta.text;
+            }
+            if (evt.type === 'message_start') {
+              log('Claude is researching...');
+            }
+          } catch {}
+        }
+      }
+
+      log('Response received');
       log('Parsing prospect data...');
       const jsonMatch = rawText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
