@@ -529,7 +529,7 @@
 
     const payload = {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
+      max_tokens: 32000,
       thinking: { type: 'enabled', budget_tokens: 5000 },
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       system: `You are a commercial insurance prospecting agent for an independent agent in New York State.
@@ -637,31 +637,48 @@ Instructions:
 
       log('Response received');
       log('Parsing prospect data...');
-      const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
 
-      let jsonStr = jsonMatch[0];
-      // Repair common LLM JSON issues: control chars, unescaped quotes in values
+      // Try to find a JSON array — complete or truncated
+      let jsonStr = '';
+      const completeMatch = rawText.match(/\[[\s\S]*\]/);
+      if (completeMatch) {
+        jsonStr = completeMatch[0];
+      } else {
+        // Truncated: find the opening [ and close it
+        const startIdx = rawText.indexOf('[');
+        if (startIdx !== -1) {
+          jsonStr = rawText.slice(startIdx);
+          log('Response was truncated, recovering partial results...', 'warn');
+        }
+      }
+
+      if (!jsonStr) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
+
+      // Strip control chars
       jsonStr = jsonStr.replace(/[\x00-\x1f]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
-      // Fix unescaped double quotes inside string values by re-encoding each value
-      jsonStr = jsonStr.replace(/"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)/g, (match) => {
-        try { JSON.parse(`{${match}: 0}`); return match; } catch { return match; }
-      });
 
       let prospects;
       try {
         prospects = JSON.parse(jsonStr);
-      } catch (e) {
-        // Last resort: extract individual objects with a lenient regex
-        const objects = [];
-        const objRegex = /\{[^{}]*"name"\s*:\s*"[^"]*"[^{}]*\}/g;
-        let m;
-        while ((m = objRegex.exec(jsonStr)) !== null) {
-          try { objects.push(JSON.parse(m[0])); } catch {}
+      } catch {
+        // Try closing a truncated array: trim trailing partial object, close the array
+        let repaired = jsonStr.replace(/,\s*\{[^}]*$/, '');
+        if (!repaired.endsWith(']')) repaired += ']';
+        try {
+          prospects = JSON.parse(repaired);
+          log(`Recovered ${prospects.length} prospects from truncated response`, 'warn');
+        } catch {
+          // Last resort: extract individual objects
+          const objects = [];
+          const objRegex = /\{[^{}]*"name"\s*:\s*"[^"]*"[^{}]*\}/g;
+          let m;
+          while ((m = objRegex.exec(jsonStr)) !== null) {
+            try { objects.push(JSON.parse(m[0])); } catch {}
+          }
+          if (!objects.length) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
+          log(`Recovered ${objects.length} prospects from malformed JSON`, 'warn');
+          prospects = objects;
         }
-        if (!objects.length) throw new Error('Could not parse prospects from response. Try again or narrow your ICP.');
-        log(`Recovered ${objects.length} prospects from malformed JSON`, 'warn');
-        prospects = objects;
       }
       allProspects = prospects;
 
