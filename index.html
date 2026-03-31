@@ -789,6 +789,7 @@ Instructions:
 
     } catch (err) {
       log(`Error: ${err.message}`, 'error');
+      log('If this persists, try narrowing your search: fewer industries, fewer counties, or a smaller revenue range.', 'error');
       setStatus('error');
     }
 
