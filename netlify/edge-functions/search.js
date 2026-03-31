@@ -68,29 +68,40 @@ export default async function handler(request) {
 
     // Wrap stream to log completion, errors, and final event data
     let lastEventData = "";
+    let streamError = "";
     const transform = new TransformStream({
       transform(chunk, controller) {
         controller.enqueue(chunk);
         try {
           const text = new TextDecoder().decode(chunk);
-          // Capture last non-empty data line for logging
           const lines = text.split("\n").filter((l) => l.startsWith("data: "));
-          if (lines.length) lastEventData = lines[lines.length - 1].slice(6);
+          for (const line of lines) {
+            const data = line.slice(6);
+            // Capture any error events in full
+            if (data.includes('"type":"error"') || data.includes('"type": "error"')) {
+              streamError = data;
+            }
+            lastEventData = data;
+          }
         } catch { /* ignore decode errors */ }
       },
       flush() {
         console.log("[search] Stream completed", {
           elapsed_ms: Date.now() - start,
-          last_event: lastEventData.substring(0, 300),
+          last_event: lastEventData.substring(0, 500),
+          ...(streamError && { stream_error: streamError.substring(0, 1000) }),
         });
       },
     });
 
     response.body.pipeTo(transform.writable).catch((err) => {
       console.error("[search] Stream pipe error", {
-        error: err.message,
+        error: String(err),
+        error_message: err?.message,
+        error_name: err?.name,
         elapsed_ms: Date.now() - start,
-        last_event: lastEventData.substring(0, 300),
+        last_event: lastEventData.substring(0, 500),
+        ...(streamError && { stream_error: streamError.substring(0, 1000) }),
       });
     });
 
