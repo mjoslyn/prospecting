@@ -674,7 +674,6 @@
     const payload = {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 16000,
-      thinking: { type: 'enabled', budget_tokens: 2000 },
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       system: `You are a commercial insurance prospecting agent for an independent agent in New York State.
 Your job is to find real, specific businesses matching the Ideal Client Profile using web search.
@@ -779,7 +778,7 @@ Instructions:
               log('Claude is researching...');
             }
             if (evt.type === 'error') {
-              log(`Stream error: ${evt.error?.message || JSON.stringify(evt)}`, 'error');
+              log(`API error: ${JSON.stringify(evt.error || evt)}`, 'error');
             }
           } catch {}
         }
