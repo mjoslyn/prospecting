@@ -740,6 +740,12 @@ Instructions:
             if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
               rawText += evt.delta.text;
             }
+            if (evt.type === 'content_block_start' && evt.content_block?.type === 'web_search_tool_use') {
+              log('Searching the web...');
+            }
+            if (evt.type === 'content_block_start' && evt.content_block?.type === 'web_search_tool_result') {
+              log('Processing search results...');
+            }
             if (evt.type === 'message_start') {
               log('Claude is researching...');
             }
@@ -773,7 +779,12 @@ Instructions:
         }
       }
 
-      if (!jsonStr) throw new Error('Could not parse prospects from response. Raw text starts with: ' + rawText.substring(0, 150));
+      if (!jsonStr) {
+        if (rawText.length < 300) {
+          throw new Error('The connection was cut short before results were returned. This usually means the request timed out. Try again.');
+        }
+        throw new Error('Could not parse prospects from response. Raw text starts with: ' + rawText.substring(0, 150));
+      }
 
       // Strip control chars
       jsonStr = jsonStr.replace(/[\x00-\x1f]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
