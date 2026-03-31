@@ -66,8 +66,35 @@ export default async function handler(request) {
       elapsed_ms: Date.now() - start,
     });
 
-    // Stream the SSE response through to the client
-    return new Response(response.body, {
+    // Wrap stream to log completion, errors, and final event data
+    let lastEventData = "";
+    const transform = new TransformStream({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        try {
+          const text = new TextDecoder().decode(chunk);
+          // Capture last non-empty data line for logging
+          const lines = text.split("\n").filter((l) => l.startsWith("data: "));
+          if (lines.length) lastEventData = lines[lines.length - 1].slice(6);
+        } catch { /* ignore decode errors */ }
+      },
+      flush() {
+        console.log("[search] Stream completed", {
+          elapsed_ms: Date.now() - start,
+          last_event: lastEventData.substring(0, 300),
+        });
+      },
+    });
+
+    response.body.pipeTo(transform.writable).catch((err) => {
+      console.error("[search] Stream pipe error", {
+        error: err.message,
+        elapsed_ms: Date.now() - start,
+        last_event: lastEventData.substring(0, 300),
+      });
+    });
+
+    return new Response(transform.readable, {
       status: 200,
       headers: {
         "Content-Type": "text/event-stream",
