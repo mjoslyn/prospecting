@@ -471,7 +471,15 @@
             <textarea id="notes" placeholder="e.g. Exclude sole proprietors, focus on companies with vehicles" style="min-height:56px"></textarea>
           </div>
 
-          <button class="btn btn-primary" id="runBtn" onclick="runAgent()">
+          <div class="field-group">
+            <label>Search Rounds</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" id="roundsSlider" min="1" max="5" value="1" step="1" style="flex:1" />
+              <span id="roundsLabel" style="min-width:80px;font-size:13px;color:var(--text2)">1 round</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="runBtn" onclick="startHunt()">
             <span>Run Prospect Hunt</span>
           </button>
           <button class="btn btn-secondary" onclick="clearResults()">Clear Results</button>
@@ -496,7 +504,7 @@
           <div class="icon" style="background:var(--warn);color:#fff">◈</div>
           <h2>Prospect List</h2>
           <span class="badge" id="prospectBadge">0 found</span>
-          <button class="export-btn" id="findMoreBtn" onclick="runAgent(true)" disabled style="margin-right:6px">Find More</button>
+          <button class="export-btn" id="findMoreBtn" onclick="findMore()" disabled style="margin-right:6px">Find More</button>
           <button class="export-btn" id="exportBtn" onclick="exportCSV()" disabled>Export CSV</button>
         </div>
         <div class="prospects-list" id="prospectsList">
@@ -547,6 +555,49 @@
 
   revMinEl.addEventListener('input', updateRange);
   revMaxEl.addEventListener('input', updateRange);
+
+  const roundsSlider = document.getElementById('roundsSlider');
+  const roundsLabel = document.getElementById('roundsLabel');
+  roundsSlider.addEventListener('input', () => {
+    const v = parseInt(roundsSlider.value);
+    roundsLabel.textContent = v === 1 ? '1 round' : `${v} rounds`;
+  });
+
+  let huntAborted = false;
+
+  async function startHunt() {
+    huntAborted = false;
+    const rounds = parseInt(roundsSlider.value);
+    const btn = document.getElementById('runBtn');
+    const findMoreBtn = document.getElementById('findMoreBtn');
+    btn.disabled = true;
+    findMoreBtn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Agent running...</span>';
+
+    for (let i = 0; i < rounds; i++) {
+      if (huntAborted) break;
+      const isFirst = i === 0;
+      if (rounds > 1) log(`Round ${i + 1} of ${rounds}`, 'success');
+      const ok = await runAgent(!isFirst);
+      if (!ok) { huntAborted = true; break; }
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>Run Prospect Hunt</span>';
+    if (allProspects.length) findMoreBtn.disabled = false;
+  }
+
+  async function findMore() {
+    const btn = document.getElementById('runBtn');
+    const findMoreBtn = document.getElementById('findMoreBtn');
+    btn.disabled = true;
+    findMoreBtn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Agent running...</span>';
+    await runAgent(true);
+    btn.disabled = false;
+    btn.innerHTML = '<span>Run Prospect Hunt</span>';
+    if (allProspects.length) findMoreBtn.disabled = false;
+  }
   updateRange();
 
   document.querySelectorAll('.checkbox-item').forEach(item => {
@@ -604,13 +655,8 @@
     const revMaxVal = revSteps[parseInt(revMaxEl.value)];
     const revRange = `${revLabels[parseInt(revMinEl.value)]} to ${revLabels[parseInt(revMaxEl.value)]}`;
 
-    if (!industries || !geography) { alert('Please select at least one industry and one county.'); return; }
+    if (!industries || !geography) { alert('Please select at least one industry and one county.'); return false; }
 
-    const btn = document.getElementById('runBtn');
-    const findMoreBtn = document.getElementById('findMoreBtn');
-    btn.disabled = true;
-    findMoreBtn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div><span>Agent running...</span>';
     setStatus('running');
     if (!append) {
       allProspects = [];
@@ -809,18 +855,15 @@ Instructions:
       renderProspects(allProspects);
       document.getElementById('prospectBadge').textContent = `${allProspects.length} found`;
       document.getElementById('exportBtn').disabled = false;
-      findMoreBtn.disabled = false;
       setStatus('complete');
+      return true;
 
     } catch (err) {
       log(`Error: ${err.message}`, 'error');
       log('If this persists, try narrowing your search: fewer industries, fewer counties, or a smaller revenue range.', 'error');
       setStatus('error');
+      return false;
     }
-
-    btn.disabled = false;
-    btn.innerHTML = '<span>Run Prospect Hunt</span>';
-    if (allProspects.length) findMoreBtn.disabled = false;
   }
 
   function formatRevenue(val) {
