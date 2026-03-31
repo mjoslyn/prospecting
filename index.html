@@ -550,8 +550,30 @@
 
   document.querySelectorAll('.checkbox-item').forEach(item => {
     item.addEventListener('click', () => {
+      const singleSelectGrid = item.closest('#industryGrid') || item.closest('#countyGrid');
+      if (singleSelectGrid) {
+        // Single-select: deselect all others in the grid
+        singleSelectGrid.querySelectorAll('.checkbox-item').forEach(other => {
+          if (other !== item) {
+            other.classList.remove('checked');
+            other.querySelector('.check-box').textContent = '';
+          }
+        });
+        // Clear custom textarea when selecting a preset industry
+        if (item.closest('#industryGrid')) {
+          document.getElementById('industriesCustom').value = '';
+        }
+      }
       item.classList.toggle('checked');
       item.querySelector('.check-box').textContent = item.classList.contains('checked') ? '✓' : '';
+    });
+  });
+
+  // Clear industry checkboxes when typing in custom field
+  document.getElementById('industriesCustom').addEventListener('input', () => {
+    document.querySelectorAll('#industryGrid .checkbox-item').forEach(item => {
+      item.classList.remove('checked');
+      item.querySelector('.check-box').textContent = '';
     });
   });
 
@@ -602,7 +624,7 @@
     const revMaxVal = revSteps[parseInt(revMaxEl.value)];
     const revRange = `${revLabels[parseInt(revMinEl.value)]} to ${revLabels[parseInt(revMaxEl.value)]}`;
 
-    if (!industries || !geography) { alert('Please select at least one industry and one county.'); return; }
+    if (!industries || !geography) { alert('Please select an industry and a county.'); return; }
 
     const btn = document.getElementById('runBtn');
     btn.disabled = true;
