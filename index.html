@@ -496,6 +496,7 @@
           <div class="icon" style="background:var(--warn);color:#fff">◈</div>
           <h2>Prospect List</h2>
           <span class="badge" id="prospectBadge">0 found</span>
+          <button class="export-btn" id="findMoreBtn" onclick="runAgent(true)" disabled style="margin-right:6px">Find More</button>
           <button class="export-btn" id="exportBtn" onclick="exportCSV()" disabled>Export CSV</button>
         </div>
         <div class="prospects-list" id="prospectsList">
@@ -604,11 +605,12 @@
     document.getElementById('prospectsList').innerHTML = `<div class="empty-state"><div class="big">🎯</div><p>Define your ICP and run the agent.<br>Prospects will appear here.</p></div>`;
     document.getElementById('prospectBadge').textContent = '0 found';
     document.getElementById('exportBtn').disabled = true;
+    document.getElementById('findMoreBtn').disabled = true;
     document.getElementById('logBody').innerHTML = `<div class="log-line"><span class="log-time">--:--</span><span class="log-msg">Cleared. Ready for new search.</span></div>`;
     setStatus('idle');
   }
 
-  async function runAgent() {
+  async function runAgent(append = false) {
     const checkedIndustries = Array.from(document.querySelectorAll('#industryGrid .checkbox-item.checked')).map(i => i.dataset.val);
     const customIndustries = document.getElementById('industriesCustom').value.trim();
     const allIndustries = [...checkedIndustries];
@@ -627,13 +629,17 @@
     if (!industries || !geography) { alert('Please select an industry and a county.'); return; }
 
     const btn = document.getElementById('runBtn');
+    const findMoreBtn = document.getElementById('findMoreBtn');
     btn.disabled = true;
+    findMoreBtn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Agent running...</span>';
     setStatus('running');
-    allProspects = [];
-    document.getElementById('prospectsList').innerHTML = '';
-    document.getElementById('prospectBadge').textContent = '0 found';
-    document.getElementById('exportBtn').disabled = true;
+    if (!append) {
+      allProspects = [];
+      document.getElementById('prospectsList').innerHTML = '';
+      document.getElementById('prospectBadge').textContent = '0 found';
+      document.getElementById('exportBtn').disabled = true;
+    }
 
     log('Agent initialized');
     log(`Target: ${industries.substring(0, 60)}...`);
@@ -687,7 +693,7 @@ TARGET REVENUE RANGE: ${revRange}
 SOURCES TO SEARCH:
 ${sources.map(s => `- ${s}`).join('\n')}
 NOTES: ${notes || 'None'}
-
+${append && allProspects.length ? `\nALREADY FOUND (do NOT include these again):\n${allProspects.map(p => p.name).join('\n')}` : ''}
 Instructions:
 1. Use web search to find real businesses in the specified geography
 2. For NYS DOS: search apps.dos.ny.gov for new entity filings in target industries
@@ -811,12 +817,21 @@ Instructions:
           prospects = objects;
         }
       }
-      allProspects = prospects;
+      if (append) {
+        // Deduplicate by name
+        const existing = new Set(allProspects.map(p => p.name?.toLowerCase()));
+        const newProspects = prospects.filter(p => !existing.has(p.name?.toLowerCase()));
+        allProspects = [...allProspects, ...newProspects];
+        log(`Found ${newProspects.length} new prospects (${prospects.length - newProspects.length} duplicates skipped)`, 'success');
+      } else {
+        allProspects = prospects;
+        log(`Found ${prospects.length} prospects`, 'success');
+      }
 
-      log(`Found ${prospects.length} prospects`, 'success');
-      renderProspects(prospects);
-      document.getElementById('prospectBadge').textContent = `${prospects.length} found`;
+      renderProspects(allProspects);
+      document.getElementById('prospectBadge').textContent = `${allProspects.length} found`;
       document.getElementById('exportBtn').disabled = false;
+      findMoreBtn.disabled = false;
       setStatus('complete');
 
     } catch (err) {
@@ -827,6 +842,7 @@ Instructions:
 
     btn.disabled = false;
     btn.innerHTML = '<span>Run Prospect Hunt</span>';
+    if (allProspects.length) findMoreBtn.disabled = false;
   }
 
   function formatRevenue(val) {
