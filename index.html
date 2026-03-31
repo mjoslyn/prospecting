@@ -888,7 +888,7 @@ Instructions:
       card.className = 'prospect-card';
       card.style.animationDelay = `${i * 0.04}s`;
       card.innerHTML = `
-        <div class="prospect-name"><a href="https://www.google.com/search?q=${encodeURIComponent((p.name || '') + ' ' + (p.address || ''))}" target="_blank" rel="noopener">${p.name || 'Unknown'}</a></div>
+        <div class="prospect-name"><a href="https://www.google.com/search?q=${encodeURIComponent((p.name || '') + ' ' + (p.address || ''))}" target="_blank" rel="noopener">${p.name || 'Unknown'} <span style="font-size:10px;opacity:0.5">&#x2197;</span></a></div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.address || ''}</div>
         <div class="prospect-meta">
           ${p.industry ? `<span class="tag industry">${p.industry}</span>` : ''}
