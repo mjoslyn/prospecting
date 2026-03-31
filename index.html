@@ -673,8 +673,8 @@
     log('Calling Claude with web search...', 'success');
 
     const payload = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 8000,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       system: `You are a commercial insurance prospecting agent for an independent agent in New York State.
 Your job is to find real, specific businesses matching the Ideal Client Profile using web search.
